@@ -134,25 +134,23 @@ export const RecursionDetailPanel: React.FC = () => {
           <div className="flex border-b border-slate-800 bg-slate-950/60 p-1 gap-1">
             <button
               onClick={() => setActiveTab('analysis')}
-              className={`flex-1 py-1 px-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
-                activeTab === 'analysis'
+              className={`flex-1 py-1 px-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${activeTab === 'analysis'
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
-              }`}
+                }`}
             >
               <Info className="w-3.5 h-3.5" />
               <span>Analysis</span>
             </button>
             <button
               onClick={() => setActiveTab('simulation')}
-              className={`flex-1 py-1 px-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
-                activeTab === 'simulation'
+              className={`flex-1 py-1 px-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${activeTab === 'simulation'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
-              }`}
+                }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              <span>Call Stack Simulation</span>
+              <span>Simulation</span>
             </button>
           </div>
 
@@ -280,11 +278,10 @@ export const RecursionDetailPanel: React.FC = () => {
                         setInitialN(val);
                         setIsPlaying(false);
                       }}
-                      className={`px-2 py-0.5 rounded text-xs font-mono font-bold transition-all ${
-                        initialN === val
+                      className={`px-2 py-0.5 rounded text-xs font-mono font-bold transition-all ${initialN === val
                           ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-400'
                           : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                      }`}
+                        }`}
                     >
                       {val}
                     </button>
@@ -376,11 +373,10 @@ export const RecursionDetailPanel: React.FC = () => {
                     return (
                       <div
                         key={idx}
-                        className={`p-2 rounded-lg font-mono text-xs flex items-center justify-between transition-all ${
-                          isCurrent
+                        className={`p-2 rounded-lg font-mono text-xs flex items-center justify-between transition-all ${isCurrent
                             ? 'bg-cyan-500/20 border border-cyan-400/60 text-cyan-200 font-bold scale-[1.01]'
                             : 'bg-slate-900/80 border border-slate-800/80 text-slate-300'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] text-slate-500">#{step.frame.id}</span>
