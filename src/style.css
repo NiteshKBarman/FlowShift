@@ -39,6 +39,42 @@
   display: none !important;
 }
 
+/* Hide default handle dots while preserving connection coordinates */
+.react-flow__handle {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* React Flow Controls Dark Theme Override */
+.react-flow__controls {
+  background-color: #0b0f19 !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 0.75rem !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+}
+
+.react-flow__controls-button {
+  background-color: #0b0f19 !important;
+  border-bottom: 1px solid #1e293b !important;
+  fill: #94a3b8 !important;
+  color: #94a3b8 !important;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none !important;
+}
+
+.react-flow__controls-button:hover {
+  background-color: #1e293b !important;
+  fill: #38bdf8 !important;
+  color: #38bdf8 !important;
+}
+
+.react-flow__controls-button svg {
+  fill: inherit !important;
+}
+
 .react-flow__pane {
   cursor: grab;
 }

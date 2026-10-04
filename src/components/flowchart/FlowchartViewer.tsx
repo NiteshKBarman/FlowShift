@@ -3,7 +3,6 @@ import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
   BackgroundVariant,
   MarkerType,
   useNodesState,
@@ -22,6 +21,8 @@ import { ProcessNode } from './nodes/ProcessNode';
 import { DecisionNode } from './nodes/DecisionNode';
 import { InputOutputNode } from './nodes/InputOutputNode';
 import { SubroutineNode } from './nodes/SubroutineNode';
+import { RecursiveCallNode } from './nodes/RecursiveCallNode';
+import { RecursionDetailPanel } from './RecursionDetailPanel';
 import {
   ArrowDownUp,
   ArrowRightLeft,
@@ -31,9 +32,9 @@ import {
 } from 'lucide-react';
 
 const ConnectorNode: React.FC = () => (
-  <div className="w-2.5 h-2.5 rounded-full bg-cyan-500/80 border border-slate-700">
-    <Handle type="target" position={Position.Top} className="opacity-0" />
-    <Handle type="source" position={Position.Bottom} className="opacity-0" />
+  <div className="w-2.5 h-2.5 rounded-full bg-slate-700 border border-slate-600">
+    <Handle type="target" position={Position.Top} className="opacity-0 w-0 h-0" />
+    <Handle type="source" position={Position.Bottom} className="opacity-0 w-0 h-0" />
   </div>
 );
 
@@ -47,10 +48,12 @@ const nodeTypes = {
   output: InputOutputNode,
   subprocess: SubroutineNode,
   connector: ConnectorNode,
+  'recursive-call': RecursiveCallNode,
 };
 
 export const FlowchartViewer: React.FC = () => {
   const {
+    programIR,
     flowProgram,
     activeGraphId,
     activeGraph,
@@ -188,22 +191,37 @@ export const FlowchartViewer: React.FC = () => {
           </div>
 
           {flowProgram && flowProgram.graphs.length > 0 ? (
-            flowProgram.graphs.map((g) => (
-              <button
-                key={g.id}
-                onClick={() => setActiveGraphId(g.id)}
-                className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all duration-150 flex items-center gap-1.5 shrink-0 ${
-                  g.id === activeGraphId
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
-                }`}
-              >
-                <span>{g.name}()</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-400">
-                  {g.nodes.length}
-                </span>
-              </button>
-            ))
+            flowProgram.graphs.map((g) => {
+              const fnIR = programIR?.functions.find((f) => f.name === g.name);
+              const isRec = fnIR?.recursion?.isRecursive;
+
+              return (
+                <button
+                  key={g.id}
+                  onClick={() => setActiveGraphId(g.id)}
+                  className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all duration-150 flex items-center gap-1.5 shrink-0 ${
+                    g.id === activeGraphId
+                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
+                  }`}
+                >
+                  <div className="flex items-center gap-1">
+                    <span>{g.name}()</span>
+                    {isRec && (
+                      <span
+                        className="text-amber-400 font-bold ml-0.5 text-xs animate-[pulse_2s_infinite]"
+                        title="Recursive function"
+                      >
+                        ↻
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-400">
+                    {g.nodes.length}
+                  </span>
+                </button>
+              );
+            })
           ) : (
             <span className="text-xs text-slate-500 italic">No functions detected</span>
           )}
@@ -245,6 +263,8 @@ export const FlowchartViewer: React.FC = () => {
 
       {/* Main Flow Canvas */}
       <div className="flex-1 w-full h-full relative">
+        <RecursionDetailPanel />
+
         {nodes.length > 0 ? (
           <ReactFlow
             nodes={nodes}
@@ -264,18 +284,12 @@ export const FlowchartViewer: React.FC = () => {
           >
             <Background
               variant={BackgroundVariant.Dots}
-              gap={20}
-              size={1.5}
-              color="#334155"
+              gap={22}
+              size={1.75}
+              color="rgba(148, 163, 184, 0.45)"
               className="bg-slate-950"
             />
-            <Controls className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl [&>button]:border-slate-800 [&>button]:fill-slate-300 [&>button:hover]:bg-slate-800 left-3 bottom-16 md:bottom-4" />
-            <MiniMap
-              nodeStrokeColor="#475569"
-              nodeColor="#1e293b"
-              maskColor="rgba(15, 23, 42, 0.75)"
-              className="hidden md:block bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl"
-            />
+            <Controls className="left-3 bottom-16 md:bottom-4" />
           </ReactFlow>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 text-slate-500">

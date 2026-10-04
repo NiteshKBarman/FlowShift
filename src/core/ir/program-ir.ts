@@ -11,6 +11,52 @@ import type { IRType } from './type-ir';
 import type { IRStatement, BlockStatement } from './statement-ir';
 import type { IRExpression } from './expression-ir';
 
+// ─── Recursion Metadata ──────────────────────────────────────────
+
+export interface RecursiveCall {
+  /** The function being called recursively */
+  readonly functionName: string;
+  /** String representation of each argument */
+  readonly argumentStrings: readonly string[];
+  /** The actual argument IR expressions */
+  readonly arguments: readonly IRExpression[];
+  /** Source location of the call site */
+  readonly sourceLocation?: SourceLocation;
+}
+
+export interface BaseCase {
+  /** Human-readable description of the base case condition */
+  readonly conditionText: string;
+  /** The return value expression string, if any */
+  readonly returnText?: string;
+  /** Source location of the if-statement that contains the base case */
+  readonly sourceLocation?: SourceLocation;
+  /** Heuristic confidence — always 'likely', never 'certain' */
+  readonly confidence: 'likely';
+}
+
+export interface RecursiveCase {
+  /** Human-readable description of the recursive case condition */
+  readonly conditionText: string;
+  /** The recursive calls within this case */
+  readonly recursiveCalls: readonly RecursiveCall[];
+  /** Source location */
+  readonly sourceLocation?: SourceLocation;
+}
+
+export interface RecursionMetadata {
+  /** Whether this function is directly recursive */
+  readonly isRecursive: boolean;
+  /** All recursive call sites found */
+  readonly recursiveCalls: readonly RecursiveCall[];
+  /** Likely base cases (heuristic, not proven) */
+  readonly baseCases: readonly BaseCase[];
+  /** Likely recursive cases */
+  readonly recursiveCases: readonly RecursiveCase[];
+  /** Count of distinct recursive call sites */
+  readonly recursiveCallCount: number;
+}
+
 // ─── Function Parameter ──────────────────────────────────────────
 
 export interface IRParameter {
@@ -29,6 +75,8 @@ export interface IRFunction {
   readonly body: BlockStatement;
   readonly isMain?: boolean;
   readonly sourceLocation?: SourceLocation;
+  /** Populated by the recursion analyzer after IR construction */
+  readonly recursion?: RecursionMetadata;
 }
 
 // ─── Include/Import ──────────────────────────────────────────────
@@ -86,6 +134,7 @@ export function createFunction(
   options?: {
     isMain?: boolean;
     sourceLocation?: SourceLocation;
+    recursion?: RecursionMetadata;
   }
 ): IRFunction {
   return {
@@ -95,6 +144,7 @@ export function createFunction(
     body,
     isMain: options?.isMain,
     sourceLocation: options?.sourceLocation,
+    recursion: options?.recursion,
   };
 }
 

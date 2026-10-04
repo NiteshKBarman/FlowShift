@@ -13,6 +13,8 @@ import {
   Code2,
   FileCode,
   X,
+  Terminal,
+  Loader2,
 } from 'lucide-react';
 
 export const HeaderToolbar: React.FC = () => {
@@ -23,7 +25,10 @@ export const HeaderToolbar: React.FC = () => {
     setActiveView,
     autoSync,
     setAutoSync,
-    runPipeline,
+    runCode,
+    isExecuting,
+    terminalOpen,
+    toggleTerminal,
     loadSample,
     isProcessing,
     diagnostics,
@@ -172,8 +177,14 @@ export const HeaderToolbar: React.FC = () => {
                       <span className="text-xs font-semibold text-slate-200">
                         {sample.title}
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
-                        {sample.category}
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
+                          sample.category === 'Recursion'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold'
+                            : 'bg-slate-800 text-slate-400'
+                        }`}
+                      >
+                        {sample.category === 'Recursion' ? '↻ Recursion' : sample.category}
                       </span>
                     </div>
                     <span className="text-[11px] text-slate-400 line-clamp-1">
@@ -186,29 +197,47 @@ export const HeaderToolbar: React.FC = () => {
           )}
         </div>
 
+        {/* Prominent Run Button (Compile, Execute & Open Terminal) */}
+        <button
+          onClick={() => runCode()}
+          disabled={isExecuting || isProcessing}
+          className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 active:from-emerald-600 active:to-green-700 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/25 transition-all active:scale-95 disabled:opacity-50 border border-emerald-400/40 cursor-pointer"
+          title="Compile & Run Code to Terminal (Shift+Enter)"
+        >
+          {isExecuting ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-950 shrink-0" />
+          ) : (
+            <Play className="w-3.5 h-3.5 fill-slate-950 shrink-0" />
+          )}
+          <span>{isExecuting ? 'Running...' : 'Run'}</span>
+        </button>
+
+        {/* Terminal Toggle Button */}
+        <button
+          onClick={toggleTerminal}
+          className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-all ${
+            terminalOpen
+              ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
+              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+          }`}
+          title="Toggle Terminal Drawer"
+        >
+          <Terminal className="w-3.5 h-3.5 shrink-0" />
+          <span className="hidden sm:inline">Terminal</span>
+        </button>
+
         {/* Live Auto-sync Toggle */}
         <button
           onClick={() => setAutoSync(!autoSync)}
           className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-all ${
             autoSync
-              ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-400'
+              ? 'bg-cyan-950/60 border-cyan-500/40 text-cyan-400'
               : 'bg-slate-900 border-slate-800 text-slate-400'
           }`}
-          title="Automatic real-time re-generation on code changes"
+          title="Automatic real-time flowchart re-generation on code changes"
         >
           <RotateCw className={`w-3.5 h-3.5 shrink-0 ${autoSync ? 'animate-spin-slow' : ''}`} />
           <span className="hidden sm:inline">Live Sync</span>
-        </button>
-
-        {/* Synthesize Button */}
-        <button
-          onClick={() => runPipeline()}
-          disabled={isProcessing}
-          className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 font-semibold text-xs shadow-lg shadow-cyan-500/20 transition-all active:scale-95 disabled:opacity-50"
-        >
-          <Play className="w-3.5 h-3.5 fill-slate-950 shrink-0" />
-          <span className="hidden xs:inline">{isProcessing ? 'Generating...' : 'Synthesize'}</span>
-          <span className="inline xs:hidden">{isProcessing ? '...' : 'Run'}</span>
         </button>
 
         {/* Diagnostics Badge */}

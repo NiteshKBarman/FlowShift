@@ -186,8 +186,8 @@ function getNodeDimensions(
     case 'end':
       return { width: Math.max(150, Math.min(220, baseWidth)), height: 44 };
     case 'decision': {
-      const decWidth = Math.max(baseWidth, 180);
-      const decHeight = Math.max(76, 48 + lineCount * 20);
+      const decWidth = Math.max(baseWidth + 50, 220);
+      const decHeight = Math.max(96, 56 + lineCount * 22);
       return { width: decWidth, height: decHeight };
     }
     case 'input':
@@ -199,6 +199,10 @@ function getNodeDimensions(
     case 'subprocess': {
       const subHeight = Math.max(68, 44 + lineCount * 20);
       return { width: Math.max(baseWidth, 190), height: subHeight };
+    }
+    case 'recursive-call': {
+      const recHeight = Math.max(76, 50 + lineCount * 20);
+      return { width: Math.max(baseWidth, 210), height: recHeight };
     }
     case 'connector':
       return { width: 24, height: 24 };

@@ -6,6 +6,7 @@ import { FlowchartViewer } from './components/flowchart/FlowchartViewer';
 import { TranslationPanel } from './components/translation/TranslationPanel';
 import { DiagnosticsDrawer } from './components/panels/DiagnosticsDrawer';
 import { NodeDetailPanel } from './components/panels/NodeDetailPanel';
+import { TerminalDrawer } from './components/terminal/TerminalDrawer';
 import {
   Layers,
   ArrowRightLeft,
@@ -23,6 +24,18 @@ export const App: React.FC = () => {
     runPipeline();
   }, [runPipeline]);
 
+  // Global Run hotkey (Shift+Enter or Ctrl+Enter)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey || e.shiftKey) && e.key === 'Enter') {
+        e.preventDefault();
+        useEditorStore.getState().runCode();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <div className="flex flex-col w-screen h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
       {/* Top Header Toolbar */}
@@ -33,9 +46,12 @@ export const App: React.FC = () => {
         {/* Split Studio Mode */}
         {activeView === 'split' && (
           <div className="w-full h-full flex flex-col md:flex-row">
-            {/* Left Column: Monaco Code Editor */}
-            <div className="w-full md:w-1/2 h-1/2 md:h-full border-b md:border-b-0 md:border-r border-slate-800 flex flex-col">
-              <CodeEditor />
+            {/* Left Column: Monaco Code Editor + Bottom-Left Terminal */}
+            <div className="w-full md:w-1/2 h-1/2 md:h-full border-b md:border-b-0 md:border-r border-slate-800 flex flex-col relative overflow-hidden">
+              <div className="flex-1 min-h-0 relative">
+                <CodeEditor />
+              </div>
+              <TerminalDrawer />
             </div>
 
             {/* Right Column: Toggleable Flowchart or Translation Panel */}
@@ -74,8 +90,11 @@ export const App: React.FC = () => {
 
         {/* Pure Code View Mode */}
         {activeView === 'code' && (
-          <div className="w-full h-full relative">
-            <CodeEditor />
+          <div className="w-full h-full flex flex-col relative overflow-hidden">
+            <div className="flex-1 min-h-0 relative">
+              <CodeEditor />
+            </div>
+            <TerminalDrawer />
           </div>
         )}
 
@@ -90,8 +109,11 @@ export const App: React.FC = () => {
         {/* Pure Translation Mode (Side by Side Source & Target) */}
         {activeView === 'translate' && (
           <div className="w-full h-full flex flex-col md:flex-row">
-            <div className="w-full md:w-1/2 h-1/2 md:h-full border-b md:border-b-0 md:border-r border-slate-800 flex flex-col">
-              <CodeEditor />
+            <div className="w-full md:w-1/2 h-1/2 md:h-full border-b md:border-b-0 md:border-r border-slate-800 flex flex-col relative overflow-hidden">
+              <div className="flex-1 min-h-0 relative">
+                <CodeEditor />
+              </div>
+              <TerminalDrawer />
             </div>
             <div className="w-full md:w-1/2 h-1/2 md:h-full flex flex-col">
               <TranslationPanel />

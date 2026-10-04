@@ -47,6 +47,7 @@ export interface GenerationResult {
 export interface FlowGenerationResult {
   readonly success: boolean;
   readonly flowProgram: FlowProgram | null;
+  readonly ir?: ProgramIR | null;
   readonly diagnostics: readonly Diagnostic[];
 }
 

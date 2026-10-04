@@ -17,7 +17,8 @@ export type FlowNodeType =
   | 'output'
   | 'decision'
   | 'subprocess'
-  | 'connector';
+  | 'connector'
+  | 'recursive-call';
 
 // ─── Flow Node ───────────────────────────────────────────────────
 
@@ -32,6 +33,11 @@ export interface FlowNodeMetadata {
   readonly sourceLocation?: SourceLocation;
   readonly statementKind?: string;
   readonly functionName?: string;
+  readonly recursive?: boolean;
+  readonly recursiveCall?: {
+    readonly functionName: string;
+    readonly argumentStrings: readonly string[];
+  };
   /** Additional custom data for the node */
   readonly data?: Record<string, unknown>;
 }

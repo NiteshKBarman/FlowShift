@@ -8,6 +8,8 @@
 import type { ProgramIR, IRFunction } from '../ir/program-ir';
 import type { IRStatement, BlockStatement } from '../ir/statement-ir';
 import { expressionToString } from '../ir/expression-ir';
+import { extractRecursiveCallsFromExpr } from '../analysis/recursion-analyzer';
+import type { RecursiveCall } from '../ir/program-ir';
 import {
   type FlowNode,
   type FlowEdge,
@@ -32,6 +34,8 @@ interface GenerationContext {
   continueTargets: string[];
   /** Target node ID for function termination / return */
   endId?: string;
+  /** Current enclosing function name for recursion detection */
+  currentFunctionName?: string;
 }
 
 function createContext(): GenerationContext {
@@ -139,6 +143,7 @@ export function generateFlowProgram(program: ProgramIR): FlowProgram {
  */
 export function generateFunctionFlowGraph(fn: IRFunction): FlowGraph {
   const ctx = createContext();
+  ctx.currentFunctionName = fn.name;
 
   const startId = nextNodeId(ctx, 'start');
   const endId = nextNodeId(ctx, 'end');
@@ -277,6 +282,27 @@ function generateExpressionStatement(
   ctx: GenerationContext,
   stmt: IRStatement & { kind: 'expression-statement' }
 ): BlockResult {
+  if (ctx.currentFunctionName) {
+    const recCalls: RecursiveCall[] = [];
+    extractRecursiveCallsFromExpr(stmt.expression, ctx.currentFunctionName, recCalls);
+    if (recCalls.length > 0 && stmt.expression.kind === 'call') {
+      const id = nextNodeId(ctx, 'rec_call');
+      const call = recCalls[0];
+      const label = `${call.functionName}(${call.argumentStrings.join(', ')})`;
+      addNode(ctx, createFlowNodeWithId(id, 'recursive-call', label, {
+        sourceLocation: call.sourceLocation ?? stmt.sourceLocation,
+        functionName: call.functionName,
+        statementKind: 'recursive-call',
+        recursive: true,
+        recursiveCall: {
+          functionName: call.functionName,
+          argumentStrings: call.argumentStrings,
+        },
+      }));
+      return { entry: id, exits: [id] };
+    }
+  }
+
   const id = nextNodeId(ctx, 'expr');
   addNode(ctx, createFlowNodeWithId(id, 'process', expressionToString(stmt.expression), {
     sourceLocation: stmt.sourceLocation,
@@ -583,6 +609,54 @@ function generateReturn(
   ctx: GenerationContext,
   stmt: IRStatement & { kind: 'return' }
 ): BlockResult {
+  // Check if return value expression contains recursive calls
+  if (stmt.value && ctx.currentFunctionName) {
+    const recCalls: RecursiveCall[] = [];
+    extractRecursiveCallsFromExpr(stmt.value, ctx.currentFunctionName, recCalls);
+
+    if (recCalls.length > 0) {
+      const callNodeIds: string[] = [];
+      for (const call of recCalls) {
+        const cId = nextNodeId(ctx, 'rec_call');
+        const cLabel = `${call.functionName}(${call.argumentStrings.join(', ')})`;
+        addNode(ctx, createFlowNodeWithId(cId, 'recursive-call', cLabel, {
+          sourceLocation: call.sourceLocation ?? stmt.sourceLocation,
+          functionName: call.functionName,
+          statementKind: 'recursive-call',
+          recursive: true,
+          recursiveCall: {
+            functionName: call.functionName,
+            argumentStrings: call.argumentStrings,
+          },
+        }));
+        callNodeIds.push(cId);
+      }
+
+      // Connect chained recursive calls
+      for (let i = 0; i < callNodeIds.length - 1; i++) {
+        addEdge(ctx, callNodeIds[i], callNodeIds[i + 1]);
+      }
+
+      // Create return node
+      const retId = nextNodeId(ctx, 'return');
+      const retLabel = `Return ${expressionToString(stmt.value)}`;
+      addNode(ctx, createFlowNodeWithId(retId, 'process', retLabel, {
+        sourceLocation: stmt.sourceLocation,
+        statementKind: stmt.kind,
+      }));
+
+      // Connect last recursive call to return node
+      addEdge(ctx, callNodeIds[callNodeIds.length - 1], retId);
+
+      // Connect return node to end terminal
+      if (ctx.endId) {
+        addEdge(ctx, retId, ctx.endId);
+      }
+
+      return { entry: callNodeIds[0], exits: [] };
+    }
+  }
+
   const id = nextNodeId(ctx, 'return');
   const label = stmt.value
     ? `Return ${expressionToString(stmt.value)}`
@@ -641,13 +715,22 @@ function generateFunctionCall(
   ctx: GenerationContext,
   stmt: IRStatement & { kind: 'function-call' }
 ): BlockResult {
-  const id = nextNodeId(ctx, 'call');
+  const isRecursive = ctx.currentFunctionName && stmt.name === ctx.currentFunctionName;
+  const id = nextNodeId(ctx, isRecursive ? 'rec_call' : 'call');
   const argsStr = stmt.arguments.map(expressionToString).join(', ');
   const label = `${stmt.name}(${argsStr})`;
 
-  addNode(ctx, createFlowNodeWithId(id, 'subprocess', label, {
+  addNode(ctx, createFlowNodeWithId(id, isRecursive ? 'recursive-call' : 'subprocess', label, {
     sourceLocation: stmt.sourceLocation,
-    statementKind: stmt.kind,
+    statementKind: isRecursive ? 'recursive-call' : stmt.kind,
+    functionName: stmt.name,
+    recursive: isRecursive ? true : undefined,
+    recursiveCall: isRecursive
+      ? {
+          functionName: stmt.name,
+          argumentStrings: stmt.arguments.map(expressionToString),
+        }
+      : undefined,
   }));
 
   return { entry: id, exits: [id] };

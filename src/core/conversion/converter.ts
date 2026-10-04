@@ -10,6 +10,7 @@ import type { ProgramIR } from '../ir/program-ir';
 import { generateFlowProgram } from '../flow/flow-generator';
 import { languageRegistry } from '../registry/language-registry';
 import { createDiagnostics, type DiagnosticsCollection } from './diagnostics';
+import { analyzeProgramRecursion } from '../analysis/recursion-analyzer';
 import type {
   ConversionResult,
   NormalizationResult,
@@ -58,16 +59,26 @@ export function sourceToIR(
   // Step 3: Normalize to IR
   const normResult = adapter.toIR(parseResult.ast);
 
+  // Step 4: Recursion Analysis (enrich Program IR with recursion metadata)
+  let enrichedIR = normResult.ir;
+  const recursionDiagnostics = [];
+  if (enrichedIR) {
+    const analysis = analyzeProgramRecursion(enrichedIR);
+    enrichedIR = analysis.program;
+    recursionDiagnostics.push(...analysis.diagnostics);
+  }
+
   // Merge all diagnostics
   const allDiagnostics = [
     ...parseResult.diagnostics,
     ...analysisResult.diagnostics,
     ...normResult.diagnostics,
+    ...recursionDiagnostics,
   ];
 
   return {
     success: normResult.success,
-    ir: normResult.ir,
+    ir: enrichedIR,
     diagnostics: allDiagnostics,
   };
 }
@@ -181,7 +192,12 @@ export function sourceToFlowchart(
     };
   }
 
-  return irToFlowchart(normResult.ir);
+  const flowRes = irToFlowchart(normResult.ir);
+  return {
+    ...flowRes,
+    ir: normResult.ir,
+    diagnostics: [...normResult.diagnostics, ...flowRes.diagnostics],
+  };
 }
 
 /**
@@ -193,6 +209,7 @@ export function irToFlowchart(ir: ProgramIR): FlowGenerationResult {
     return {
       success: true,
       flowProgram,
+      ir,
       diagnostics: [],
     };
   } catch (error) {
