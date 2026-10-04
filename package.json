@@ -29,8 +29,6 @@
     "monaco-editor": "^0.57.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-flow-renderer": "^10.3.17",
-    "web-tree-sitter": "^0.27.0",
     "zustand": "^5.0.15"
   }
 }
