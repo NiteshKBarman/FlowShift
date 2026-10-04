@@ -90,15 +90,14 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ readOnly = false }) => {
     const model = editorRef.current.getModel();
     if (!model) return;
 
+    // Only display squiggly underlines for actual errors and warnings (not informational notes)
     const markers: monacoEditor.editor.IMarkerData[] = diagnostics
-      .filter((d) => d.sourceLocation)
+      .filter((d) => d.sourceLocation && (d.severity === 'error' || d.severity === 'warning'))
       .map((d) => ({
         severity:
           d.severity === 'error'
             ? monaco.MarkerSeverity.Error
-            : d.severity === 'warning'
-              ? monaco.MarkerSeverity.Warning
-              : monaco.MarkerSeverity.Info,
+            : monaco.MarkerSeverity.Warning,
         message: d.message,
         startLineNumber: d.sourceLocation!.startLine,
         startColumn: d.sourceLocation!.startColumn || 1,
