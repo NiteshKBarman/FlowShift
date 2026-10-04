@@ -8,6 +8,8 @@ import {
   MarkerType,
   useNodesState,
   useEdgesState,
+  Handle,
+  Position,
   type Node,
   type Edge,
   type NodeMouseHandler,
@@ -28,6 +30,13 @@ import {
   Sparkles,
 } from 'lucide-react';
 
+const ConnectorNode: React.FC = () => (
+  <div className="w-2.5 h-2.5 rounded-full bg-cyan-500/80 border border-slate-700">
+    <Handle type="target" position={Position.Top} className="opacity-0" />
+    <Handle type="source" position={Position.Bottom} className="opacity-0" />
+  </div>
+);
+
 const nodeTypes = {
   start: TerminalNode,
   end: TerminalNode,
@@ -37,6 +46,7 @@ const nodeTypes = {
   input: InputOutputNode,
   output: InputOutputNode,
   subprocess: SubroutineNode,
+  connector: ConnectorNode,
 };
 
 export const FlowchartViewer: React.FC = () => {
