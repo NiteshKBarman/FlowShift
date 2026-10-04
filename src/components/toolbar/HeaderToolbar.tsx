@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useEditorStore, type SupportedLanguage } from '../../store/editor-store';
 import { SAMPLE_PROGRAMS } from '../../data/samples';
 import {
-  Workflow,
   Play,
   RotateCw,
   Columns,
@@ -13,6 +12,7 @@ import {
   AlertCircle,
   Code2,
   FileCode,
+  X,
 } from 'lucide-react';
 
 export const HeaderToolbar: React.FC = () => {
@@ -30,6 +30,7 @@ export const HeaderToolbar: React.FC = () => {
   } = useEditorStore();
 
   const [showSamplesMenu, setShowSamplesMenu] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
 
   const errorCount = diagnostics.filter((d) => d.severity === 'error').length;
   const warningCount = diagnostics.filter((d) => d.severity === 'warning').length;
@@ -45,9 +46,13 @@ export const HeaderToolbar: React.FC = () => {
     <header className="h-14 border-b border-slate-800 bg-slate-950/95 backdrop-blur-xl px-3 sm:px-4 flex items-center justify-between z-30 select-none shadow-sm">
       {/* Brand & Title */}
       <div className="flex items-center gap-3 sm:gap-6">
-        <div className="flex items-center gap-2 sm:gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-teal-400 flex items-center justify-center shadow-lg shadow-cyan-500/25 shrink-0">
-            <Workflow className="w-5 h-5 text-slate-950 font-bold" />
+        <div
+          onClick={() => setShowAboutModal(true)}
+          className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group"
+          title="Click to learn more about FlowShift"
+        >
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900/90 border border-slate-700/60 p-1 flex items-center justify-center shadow-lg shadow-cyan-500/10 shrink-0 transition-transform group-hover:scale-105 overflow-hidden">
+            <img src="/logo-icon.png" alt="FlowShift Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <div className="flex items-center gap-1.5 sm:gap-2">
@@ -58,6 +63,9 @@ export const HeaderToolbar: React.FC = () => {
                 Studio
               </span>
             </div>
+            <p className="text-[10px] text-slate-400 font-medium hidden sm:block">
+              Code &rarr; Flowchart &rarr; Code
+            </p>
           </div>
         </div>
 
@@ -213,6 +221,41 @@ export const HeaderToolbar: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Brand About Modal */}
+      {showAboutModal && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setShowAboutModal(false)}
+        >
+          <div
+            className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl relative max-h-[92vh] overflow-y-auto animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowAboutModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-xl hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="w-40 h-40 sm:w-48 sm:h-48 mx-auto mb-3 bg-white rounded-2xl p-2 shadow-2xl shadow-cyan-500/10 overflow-hidden flex items-center justify-center border border-slate-700/50">
+              <img src="/logo.png" alt="FlowShift Full Logo" className="w-full h-full object-contain" />
+            </div>
+            <h3 className="text-xl font-extrabold text-white tracking-tight">FlowShift</h3>
+            <p className="text-xs font-semibold text-cyan-400 mt-1">Code &rarr; Flowchart &rarr; Code</p>
+            <p className="text-xs text-slate-400 mt-0.5 italic">Visualize. Convert. Build.</p>
+            <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-center gap-2 text-xs">
+              <span className="px-2 py-0.5 rounded-md bg-blue-950/80 text-blue-400 border border-blue-800/50 font-mono font-semibold">C</span>
+              <span className="px-2 py-0.5 rounded-md bg-purple-950/80 text-purple-400 border border-purple-800/50 font-mono font-semibold">C++</span>
+              <span className="px-2 py-0.5 rounded-md bg-emerald-950/80 text-emerald-400 border border-emerald-800/50 font-mono font-semibold">Python</span>
+              <span className="px-2 py-0.5 rounded-md bg-amber-950/80 text-amber-400 border border-amber-800/50 font-mono font-semibold">Java</span>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-3 leading-relaxed">
+              100% Client-Side In-Browser Studio • Zero Server Latency • Total Privacy
+            </p>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
