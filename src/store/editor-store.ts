@@ -14,7 +14,7 @@ import { SAMPLE_PROGRAMS } from '../data/samples';
 import '../languages'; // Initialize language adapters
 
 export type SupportedLanguage = 'c' | 'cpp' | 'python' | 'java';
-export type AppViewMode = 'split' | 'flowchart' | 'translate';
+export type AppViewMode = 'split' | 'flowchart' | 'translate' | 'code';
 
 interface EditorState {
   // Source State

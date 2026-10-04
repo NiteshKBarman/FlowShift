@@ -179,12 +179,12 @@ export const FlowchartViewer: React.FC = () => {
   return (
     <div className="relative w-full h-full bg-slate-950 flex flex-col overflow-hidden">
       {/* Function Tabs & Layout Controls Header */}
-      <div className="h-12 border-b border-slate-800 bg-slate-900/60 backdrop-blur-md px-4 flex items-center justify-between z-10 select-none">
+      <div className="min-h-12 border-b border-slate-800 bg-slate-900/60 backdrop-blur-md px-3 sm:px-4 py-1.5 flex flex-wrap items-center justify-between gap-2 z-10 select-none">
         {/* Function Tabs for Multi-function programs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mr-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto py-1 max-w-[65%] sm:max-w-none scrollbar-none">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mr-1 sm:mr-2 shrink-0">
             <FunctionSquare className="w-4 h-4 text-cyan-400" />
-            <span>Function:</span>
+            <span className="hidden xs:inline">Function:</span>
           </div>
 
           {flowProgram && flowProgram.graphs.length > 0 ? (
@@ -192,7 +192,7 @@ export const FlowchartViewer: React.FC = () => {
               <button
                 key={g.id}
                 onClick={() => setActiveGraphId(g.id)}
-                className={`px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all duration-150 flex items-center gap-1.5 ${
+                className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all duration-150 flex items-center gap-1.5 shrink-0 ${
                   g.id === activeGraphId
                     ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
@@ -210,22 +210,22 @@ export const FlowchartViewer: React.FC = () => {
         </div>
 
         {/* Viewport & Layout Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Orientation Toggle */}
           <button
             onClick={() => setLayoutDirection(layoutDirection === 'DOWN' ? 'RIGHT' : 'DOWN')}
-            className="p-1.5 px-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors"
+            className="p-1.5 px-2 sm:px-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors"
             title="Toggle Flowchart Layout Direction"
           >
             {layoutDirection === 'DOWN' ? (
               <>
-                <ArrowDownUp className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Vertical</span>
+                <ArrowDownUp className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                <span className="hidden sm:inline">Vertical</span>
               </>
             ) : (
               <>
-                <ArrowRightLeft className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Horizontal</span>
+                <ArrowRightLeft className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                <span className="hidden sm:inline">Horizontal</span>
               </>
             )}
           </button>
@@ -234,11 +234,11 @@ export const FlowchartViewer: React.FC = () => {
           <button
             onClick={handleExportJSON}
             disabled={!activeGraph}
-            className="p-1.5 px-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 disabled:opacity-40 text-slate-300 text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors"
+            className="p-1.5 px-2 sm:px-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 disabled:opacity-40 text-slate-300 text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors"
             title="Export Flowchart Graph as JSON"
           >
-            <Download className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Export JSON</span>
+            <Download className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="hidden sm:inline">Export JSON</span>
           </button>
         </div>
       </div>
@@ -269,12 +269,12 @@ export const FlowchartViewer: React.FC = () => {
               color="#334155"
               className="bg-slate-950"
             />
-            <Controls className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl [&>button]:border-slate-800 [&>button]:fill-slate-300 [&>button:hover]:bg-slate-800" />
+            <Controls className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl [&>button]:border-slate-800 [&>button]:fill-slate-300 [&>button:hover]:bg-slate-800 left-3 bottom-16 md:bottom-4" />
             <MiniMap
               nodeStrokeColor="#475569"
               nodeColor="#1e293b"
               maskColor="rgba(15, 23, 42, 0.75)"
-              className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl"
+              className="hidden md:block bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl"
             />
           </ReactFlow>
         ) : (

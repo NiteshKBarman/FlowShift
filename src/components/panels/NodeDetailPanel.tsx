@@ -10,7 +10,7 @@ export const NodeDetailPanel: React.FC = () => {
   const meta = selectedNode.metadata;
 
   return (
-    <div className="absolute right-4 top-16 w-80 rounded-2xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-xl p-4 z-20 animate-in fade-in slide-in-from-right-4 duration-150 flex flex-col gap-3 font-sans select-none">
+    <div className="fixed inset-x-3 bottom-16 sm:inset-x-auto sm:right-4 sm:top-16 sm:bottom-auto w-auto sm:w-80 max-h-[50vh] sm:max-h-none overflow-y-auto rounded-2xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-xl p-4 z-40 animate-in fade-in slide-in-from-bottom-4 sm:slide-in-from-right-4 duration-150 flex flex-col gap-3 font-sans select-none">
       <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />

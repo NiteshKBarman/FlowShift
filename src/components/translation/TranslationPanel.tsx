@@ -58,13 +58,13 @@ export const TranslationPanel: React.FC = () => {
   return (
     <div className="relative w-full h-full flex flex-col bg-slate-950 overflow-hidden">
       {/* Target Sub-header */}
-      <div className="h-12 border-b border-slate-800 bg-slate-900/80 px-4 flex items-center justify-between z-10 select-none">
+      <div className="min-h-12 border-b border-slate-800 bg-slate-900/80 px-3 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-2 z-10 select-none">
         {/* Language Selection & Direction */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
             <span className="font-mono uppercase text-slate-400">{sourceLanguage}</span>
-            <ArrowRight className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="text-slate-400">Target:</span>
+            <ArrowRight className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            <span className="text-slate-400 hidden xs:inline">Target:</span>
           </div>
 
           <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5">
@@ -72,7 +72,7 @@ export const TranslationPanel: React.FC = () => {
               <button
                 key={lang.id}
                 onClick={() => setTargetLanguage(lang.id)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                className={`px-2 sm:px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                   targetLanguage === lang.id
                     ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
                     : 'text-slate-400 hover:text-slate-200'
@@ -85,60 +85,61 @@ export const TranslationPanel: React.FC = () => {
 
           {/* Status Badge */}
           {conversionStatus === 'success' && (
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-950/80 text-emerald-400 border border-emerald-500/40">
-              <CheckCircle2 className="w-3 h-3" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium bg-emerald-950/80 text-emerald-400 border border-emerald-500/40">
+              <CheckCircle2 className="w-3 h-3 shrink-0" />
               <span>Converted</span>
             </span>
           )}
           {conversionStatus === 'partial_success' && (
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-950/80 text-amber-400 border border-amber-500/40">
-              <AlertTriangle className="w-3 h-3" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium bg-amber-950/80 text-amber-400 border border-amber-500/40">
+              <AlertTriangle className="w-3 h-3 shrink-0" />
               <span>Partial</span>
             </span>
           )}
         </div>
 
         {/* Toolbar Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Diff View Toggle */}
           <button
             onClick={() => setShowDiff(!showDiff)}
-            className={`p-1.5 px-2.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-colors ${
+            className={`p-1.5 px-2 sm:px-2.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-colors ${
               showDiff
                 ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
                 : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700/60'
             }`}
             title="Toggle Diff View"
           >
-            <GitCompare className="w-3.5 h-3.5" />
-            <span>Diff View</span>
+            <GitCompare className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden sm:inline">Diff View</span>
           </button>
 
           {/* Refresh Conversion */}
           <button
             onClick={runConversion}
-            className="p-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors"
+            className="p-1.5 px-2 sm:px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors"
             title="Re-run Translation"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Translate</span>
+            <RefreshCw className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            <span className="hidden sm:inline">Translate</span>
           </button>
 
           {/* Copy Button */}
           <button
             onClick={handleCopy}
             disabled={!convertedCode}
-            className="p-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors"
+            className="p-1.5 px-2 sm:px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors"
+            title="Copy Converted Code"
           >
             {copied ? (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <span className="text-emerald-300">Copied</span>
               </>
             ) : (
               <>
-                <Copy className="w-3.5 h-3.5 text-slate-400" />
-                <span>Copy</span>
+                <Copy className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="hidden sm:inline">Copy</span>
               </>
             )}
           </button>
@@ -147,10 +148,11 @@ export const TranslationPanel: React.FC = () => {
           <button
             onClick={handleDownload}
             disabled={!convertedCode}
-            className="p-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors"
+            className="p-1.5 px-2 sm:px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors"
+            title="Download Converted File"
           >
-            <Download className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Download</span>
+            <Download className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="hidden sm:inline">Export</span>
           </button>
         </div>
       </div>
@@ -166,12 +168,13 @@ export const TranslationPanel: React.FC = () => {
             theme="flowshift-dark"
             options={{
               readOnly: true,
-              fontSize: 13,
-              lineHeight: 22,
+              fontSize: window.innerWidth < 640 ? 12 : 13,
+              lineHeight: window.innerWidth < 640 ? 20 : 22,
               fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
               automaticLayout: true,
               scrollBeyondLastLine: false,
-              renderSideBySide: true,
+              wordWrap: 'on',
+              renderSideBySide: window.innerWidth >= 768,
             }}
           />
         ) : (
@@ -183,11 +186,12 @@ export const TranslationPanel: React.FC = () => {
             options={{
               readOnly: true,
               minimap: { enabled: false },
-              fontSize: 13,
-              lineHeight: 22,
+              fontSize: window.innerWidth < 640 ? 12 : 13,
+              lineHeight: window.innerWidth < 640 ? 20 : 22,
               fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
               automaticLayout: true,
               scrollBeyondLastLine: false,
+              wordWrap: 'on',
               padding: { top: 12, bottom: 12 },
             }}
           />
