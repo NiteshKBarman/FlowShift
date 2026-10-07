@@ -4,13 +4,16 @@ import { Layers } from 'lucide-react';
 
 export const SubroutineNode: React.FC<NodeProps> = ({ data, selected }) => {
   const label = (data.label as string) || '';
+  const isExecuting = Boolean(data.isExecuting);
 
   return (
     <div
       className={`relative px-4 py-3 rounded-xl bg-slate-900/90 border transition-all duration-200 shadow-xl backdrop-blur-md min-w-[170px] max-w-[280px] cursor-grab active:cursor-grabbing ${
-        selected
-          ? 'border-indigo-400 ring-2 ring-indigo-400/40 ring-offset-2 ring-offset-slate-950 scale-105'
-          : 'border-indigo-500/60 hover:border-indigo-400'
+        isExecuting
+          ? 'border-emerald-400 ring-2 ring-emerald-400/80 ring-offset-2 ring-offset-slate-950 scale-110 shadow-emerald-500/30'
+          : selected
+            ? 'border-indigo-400 ring-2 ring-indigo-400/40 ring-offset-2 ring-offset-slate-950 scale-105'
+            : 'border-indigo-500/60 hover:border-indigo-400'
       }`}
     >
       {/* Side double vertical lines characteristic of subroutine symbol */}

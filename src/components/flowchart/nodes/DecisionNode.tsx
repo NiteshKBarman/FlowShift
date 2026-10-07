@@ -4,11 +4,16 @@ import { HelpCircle } from 'lucide-react';
 
 export const DecisionNode: React.FC<NodeProps> = ({ data, selected }) => {
   const label = (data.label as string) || 'Condition?';
+  const isExecuting = Boolean(data.isExecuting);
 
   return (
     <div
       className={`relative flex items-center justify-center min-w-[210px] max-w-[320px] min-h-[96px] cursor-grab active:cursor-grabbing transition-transform duration-200 ${
-        selected ? 'scale-105' : 'hover:scale-[1.02]'
+        isExecuting
+          ? 'scale-110 drop-shadow-[0_0_15px_rgba(52,211,153,0.4)]'
+          : selected
+            ? 'scale-105'
+            : 'hover:scale-[1.02]'
       }`}
     >
       {/* SVG Diamond (Rhombus) Symbol */}
@@ -19,23 +24,29 @@ export const DecisionNode: React.FC<NodeProps> = ({ data, selected }) => {
       >
         <defs>
           <linearGradient id="decisionDiamondGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#451a03" stopOpacity="0.9" />
+            <stop offset="0%" stopColor={isExecuting ? '#064e3b' : '#451a03'} stopOpacity="0.9" />
             <stop offset="50%" stopColor="#0f172a" stopOpacity="0.96" />
-            <stop offset="100%" stopColor="#451a03" stopOpacity="0.88" />
+            <stop offset="100%" stopColor={isExecuting ? '#064e3b' : '#451a03'} stopOpacity="0.88" />
           </linearGradient>
-          {selected && (
+          {(selected || isExecuting) && (
             <filter id="decisionSelectedGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#fbbf24" floodOpacity="0.6" />
+              <feDropShadow
+                dx="0"
+                dy="0"
+                stdDeviation="4"
+                floodColor={isExecuting ? '#34d399' : '#fbbf24'}
+                floodOpacity="0.8"
+              />
             </filter>
           )}
         </defs>
         <polygon
           points="50,2 98,50 50,98 2,50"
           fill="url(#decisionDiamondGradient)"
-          stroke={selected ? '#fbbf24' : 'rgba(245, 158, 11, 0.7)'}
-          strokeWidth={selected ? '2.5' : '1.5'}
+          stroke={isExecuting ? '#34d399' : selected ? '#fbbf24' : 'rgba(245, 158, 11, 0.7)'}
+          strokeWidth={isExecuting ? '3' : selected ? '2.5' : '1.5'}
           strokeLinejoin="round"
-          filter={selected ? 'url(#decisionSelectedGlow)' : undefined}
+          filter={selected || isExecuting ? 'url(#decisionSelectedGlow)' : undefined}
           vectorEffect="non-scaling-stroke"
         />
       </svg>
@@ -50,8 +61,8 @@ export const DecisionNode: React.FC<NodeProps> = ({ data, selected }) => {
       {/* Content centered in diamond's inscribed area */}
       <div className="relative z-10 flex flex-col items-center justify-center px-8 py-3 text-center pointer-events-none select-none">
         <div className="flex items-center gap-1.5 mb-1 justify-center">
-          <HelpCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400/90 font-mono">
+          <HelpCircle className={`w-3.5 h-3.5 shrink-0 ${isExecuting ? 'text-emerald-400' : 'text-amber-400'}`} />
+          <span className={`text-[10px] font-bold uppercase tracking-wider font-mono ${isExecuting ? 'text-emerald-300' : 'text-amber-400/90'}`}>
             Decision
           </span>
         </div>
@@ -59,6 +70,13 @@ export const DecisionNode: React.FC<NodeProps> = ({ data, selected }) => {
         <p className="font-mono text-xs font-semibold text-amber-100 break-words leading-relaxed max-w-[170px]">
           {label}
         </p>
+
+        {isExecuting && (
+          <span className="inline-flex items-center gap-1 text-[9px] uppercase font-mono font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/50 animate-pulse mt-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            Executing
+          </span>
+        )}
       </div>
 
       {/* Primary Source handle at Bottom Apex */}

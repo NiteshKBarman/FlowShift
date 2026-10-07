@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useEditorStore } from '../../store/editor-store';
 import {
-  Play,
   Square,
   Trash2,
   Copy,
@@ -19,7 +18,6 @@ export const TerminalDrawer: React.FC = () => {
     toggleTerminal,
     terminalOutput,
     clearTerminal,
-    runCode,
     isExecuting,
     isWaitingForInput,
     inputPrompt,
@@ -255,29 +253,17 @@ export const TerminalDrawer: React.FC = () => {
         {/* Action Controls */}
         <div className="flex items-center gap-1 sm:gap-2">
           {/* Stop Button when executing */}
-          {(isExecuting || isWaitingForInput) ? (
+          {(isExecuting || isWaitingForInput) && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 killExecution();
               }}
-              className="flex items-center gap-1 px-2 py-1 rounded-md bg-rose-600/90 hover:bg-rose-500 text-white text-[11px] font-semibold transition-all shadow-sm shadow-rose-500/20"
+              className="flex items-center gap-1 px-2 py-1 rounded-md bg-rose-600/90 hover:bg-rose-500 text-white text-[11px] font-semibold transition-all shadow-sm shadow-rose-500/20 cursor-pointer"
               title="Stop execution (Ctrl+C)"
             >
               <Square className="w-3 h-3 fill-white" />
               <span>Stop</span>
-            </button>
-          ) : (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                runCode();
-              }}
-              className="flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-[11px] font-semibold transition-all shadow-sm shadow-emerald-500/20"
-              title="Run Program (Shift+Enter)"
-            >
-              <Play className="w-3 h-3 fill-white" />
-              <span>Run</span>
             </button>
           )}
 

@@ -1,14 +1,15 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import {
   ReactFlow,
   Background,
-  Controls,
   BackgroundVariant,
   MarkerType,
   useNodesState,
   useEdgesState,
   Handle,
   Position,
+  useReactFlow,
+  ReactFlowProvider,
   type Node,
   type Edge,
   type NodeMouseHandler,
@@ -29,6 +30,12 @@ import {
   Download,
   FunctionSquare,
   Sparkles,
+  Maximize2,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  HelpCircle,
+  X,
 } from 'lucide-react';
 
 const ConnectorNode: React.FC = () => (
@@ -51,7 +58,103 @@ const nodeTypes = {
   'recursive-call': RecursiveCallNode,
 };
 
-export const FlowchartViewer: React.FC = () => {
+// Inner canvas controls using useReactFlow
+const FlowchartControlsOverlay: React.FC = () => {
+  const { fitView, zoomIn, zoomOut, zoomTo } = useReactFlow();
+  const [showLegend, setShowLegend] = useState(false);
+
+  return (
+    <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 rounded-xl p-1 backdrop-blur-md shadow-xl select-none">
+      <button
+        onClick={() => fitView({ padding: 0.2, duration: 300 })}
+        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+        title="Fit Flowchart in View"
+      >
+        <Maximize2 className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={() => zoomIn({ duration: 200 })}
+        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+        title="Zoom In"
+      >
+        <ZoomIn className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={() => zoomOut({ duration: 200 })}
+        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+        title="Zoom Out"
+      >
+        <ZoomOut className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={() => zoomTo(1, { duration: 200 })}
+        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+        title="Reset Zoom to 100%"
+      >
+        <RotateCcw className="w-3.5 h-3.5" />
+      </button>
+
+      <span className="w-px h-4 bg-slate-800 my-auto" />
+
+      {/* Legend Popover Toggle */}
+      <div className="relative">
+        <button
+          onClick={() => setShowLegend(!showLegend)}
+          className={`p-1.5 rounded-lg transition-colors ${
+            showLegend
+              ? 'bg-cyan-500/20 text-cyan-300'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800'
+          }`}
+          title="Flowchart Symbols Legend"
+        >
+          <HelpCircle className="w-3.5 h-3.5" />
+        </button>
+
+        {showLegend && (
+          <div className="absolute bottom-full right-0 mb-2 w-64 bg-slate-900 border border-slate-700 rounded-2xl p-3 shadow-2xl text-xs z-30 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+              <span className="font-bold text-slate-200">Symbols Legend</span>
+              <button
+                onClick={() => setShowLegend(false)}
+                className="text-slate-400 hover:text-white p-0.5"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="space-y-2 text-[11px]">
+              <div className="flex items-center gap-2">
+                <span className="w-3.5 h-2 rounded-full bg-emerald-500/80 border border-emerald-400 shrink-0" />
+                <span className="text-slate-300">Terminal: Start / End</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3.5 h-2.5 rounded bg-cyan-900 border border-cyan-500 shrink-0" />
+                <span className="text-slate-300">Process: Statement / Assignment</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rotate-45 bg-amber-900 border border-amber-500 shrink-0" />
+                <span className="text-slate-300">Decision: If condition / Loop branch</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-2.5 skew-x-12 bg-sky-900 border border-sky-500 shrink-0" />
+                <span className="text-slate-300">Input / Output: Scanf, Printf, I/O</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3.5 h-2.5 rounded bg-indigo-900 border border-indigo-500 shrink-0" />
+                <span className="text-slate-300">Function: Routine invocation</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3.5 h-2.5 rounded bg-purple-900 border border-purple-400 shrink-0" />
+                <span className="text-slate-300">Recursive Call: Self-referential</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const FlowchartViewerContent: React.FC = () => {
   const {
     programIR,
     flowProgram,
@@ -60,6 +163,7 @@ export const FlowchartViewer: React.FC = () => {
     layoutResult,
     layoutDirection,
     selectedNodeId,
+    executionState,
     setLayoutDirection,
     setActiveGraphId,
     selectNode,
@@ -69,7 +173,7 @@ export const FlowchartViewer: React.FC = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
-  // Synchronize layout results into interactive, draggable nodes & edges
+  // Synchronize layout results into interactive nodes & edges
   useEffect(() => {
     if (!layoutResult) {
       setNodes([]);
@@ -77,17 +181,25 @@ export const FlowchartViewer: React.FC = () => {
       return;
     }
 
-    const newNodes: Node[] = layoutResult.nodes.map((n) => ({
-      id: n.id,
-      type: n.flowNode.type,
-      position: { x: n.x, y: n.y },
-      data: {
-        label: n.flowNode.label,
+    const currentExecNodeId = executionState?.currentFlowNodeId;
+
+    const newNodes: Node[] = layoutResult.nodes.map((n) => {
+      const isSelected = n.id === selectedNodeId;
+      const isExecuting = n.id === currentExecNodeId;
+
+      return {
+        id: n.id,
         type: n.flowNode.type,
-        metadata: n.flowNode.metadata,
-      },
-      selected: n.id === selectedNodeId,
-    }));
+        position: { x: n.x, y: n.y },
+        data: {
+          label: n.flowNode.label,
+          type: n.flowNode.type,
+          metadata: n.flowNode.metadata,
+          isExecuting,
+        },
+        selected: isSelected || isExecuting,
+      };
+    });
 
     const newEdges: Edge[] = layoutResult.edges.map((e) => {
       let strokeColor = '#64748b'; // slate-500
@@ -98,13 +210,15 @@ export const FlowchartViewer: React.FC = () => {
       if (e.branch === 'true') {
         strokeColor = '#10b981'; // emerald-500
         labelBgColor = '#064e3b';
-        labelTextColor = '#a7f3d0';
+        labelTextColor = '#6ee7b7';
       } else if (e.branch === 'false') {
         strokeColor = '#f43f5e'; // rose-500
         labelBgColor = '#881337';
-        labelTextColor = '#fecdd3';
-      } else if (e.branch === 'loop-back') {
-        strokeColor = '#38bdf8'; // sky-400
+        labelTextColor = '#fda4af';
+      }
+
+      if ((e as { isLoopBack?: boolean }).isLoopBack || e.label?.toLowerCase().includes('loop')) {
+        strokeColor = '#f59e0b'; // amber-500
         animated = true;
       }
 
@@ -142,17 +256,7 @@ export const FlowchartViewer: React.FC = () => {
 
     setNodes(newNodes);
     setEdges(newEdges);
-  }, [layoutResult, setNodes, setEdges]);
-
-  // Sync selection without resetting dragged node positions
-  useEffect(() => {
-    setNodes((prevNodes) =>
-      prevNodes.map((n) => ({
-        ...n,
-        selected: n.id === selectedNodeId,
-      }))
-    );
-  }, [selectedNodeId, setNodes]);
+  }, [layoutResult, selectedNodeId, executionState?.currentFlowNodeId, setNodes, setEdges]);
 
   const onNodeClick: NodeMouseHandler = useCallback(
     (_, node) => {
@@ -180,13 +284,13 @@ export const FlowchartViewer: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full h-full bg-slate-950 flex flex-col overflow-hidden">
-      {/* Function Tabs & Layout Controls Header */}
-      <div className="min-h-12 border-b border-slate-800 bg-slate-900/60 backdrop-blur-md px-3 sm:px-4 py-1.5 flex flex-wrap items-center justify-between gap-2 z-10 select-none">
-        {/* Function Tabs for Multi-function programs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto py-1 max-w-[65%] sm:max-w-none scrollbar-none">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mr-1 sm:mr-2 shrink-0">
-            <FunctionSquare className="w-4 h-4 text-cyan-400" />
+    <div className="w-full h-full flex flex-col bg-slate-950 overflow-hidden relative">
+      {/* Top Flow Toolbar */}
+      <div className="h-10 border-b border-slate-800 bg-slate-900/90 px-3 sm:px-4 flex items-center justify-between z-10 select-none">
+        {/* Function Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+          <div className="flex items-center gap-1 text-slate-400 text-xs font-semibold mr-1 shrink-0">
+            <FunctionSquare className="w-3.5 h-3.5 text-cyan-400" />
             <span className="hidden xs:inline">Function:</span>
           </div>
 
@@ -199,7 +303,7 @@ export const FlowchartViewer: React.FC = () => {
                 <button
                   key={g.id}
                   onClick={() => setActiveGraphId(g.id)}
-                  className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all duration-150 flex items-center gap-1.5 shrink-0 ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-mono font-medium transition-all duration-150 flex items-center gap-1.5 shrink-0 ${
                     g.id === activeGraphId
                       ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
@@ -232,7 +336,7 @@ export const FlowchartViewer: React.FC = () => {
           {/* Orientation Toggle */}
           <button
             onClick={() => setLayoutDirection(layoutDirection === 'DOWN' ? 'RIGHT' : 'DOWN')}
-            className="p-1.5 px-2 sm:px-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors"
+            className="p-1.5 px-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors"
             title="Toggle Flowchart Layout Direction"
           >
             {layoutDirection === 'DOWN' ? (
@@ -252,11 +356,11 @@ export const FlowchartViewer: React.FC = () => {
           <button
             onClick={handleExportJSON}
             disabled={!activeGraph}
-            className="p-1.5 px-2 sm:px-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 disabled:opacity-40 text-slate-300 text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors"
+            className="p-1.5 px-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 disabled:opacity-40 text-slate-300 text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors"
             title="Export Flowchart Graph as JSON"
           >
             <Download className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span className="hidden sm:inline">Export JSON</span>
+            <span className="hidden sm:inline">Export</span>
           </button>
         </div>
       </div>
@@ -271,41 +375,42 @@ export const FlowchartViewer: React.FC = () => {
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            nodeTypes={nodeTypes}
             onNodeClick={onNodeClick}
             onPaneClick={onPaneClick}
-            nodesDraggable={true}
-            elementsSelectable={true}
+            nodeTypes={nodeTypes}
             fitView
-            minZoom={0.2}
-            maxZoom={2}
-            defaultEdgeOptions={{ type: 'smoothstep' }}
+            minZoom={0.15}
+            maxZoom={2.5}
+            defaultViewport={{ x: 0, y: 0, zoom: 0.9 }}
+            attributionPosition="bottom-left"
             proOptions={{ hideAttribution: true }}
+            className="bg-slate-950"
           >
             <Background
               variant={BackgroundVariant.Dots}
-              gap={22}
-              size={1.75}
-              color="rgba(148, 163, 184, 0.45)"
-              className="bg-slate-950"
+              gap={20}
+              size={1}
+              color="#1e293b"
             />
-            <Controls className="left-3 bottom-16 md:bottom-4" />
+            <FlowchartControlsOverlay />
           </ReactFlow>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 text-slate-500">
+          <div className="w-full h-full flex flex-col items-center justify-center text-center p-6 text-slate-500">
             {isProcessing ? (
               <div className="flex flex-col items-center gap-3">
-                <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm font-medium text-slate-400">Synthesizing Flowchart...</p>
+                <Sparkles className="w-8 h-8 text-cyan-400 animate-pulse" />
+                <p className="text-sm font-medium text-slate-400">
+                  Synthesizing flowchart from code...
+                </p>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-3 max-w-sm">
-                <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-2">
-                  <Sparkles className="w-6 h-6" />
+              <div className="flex flex-col items-center gap-2 max-w-sm">
+                <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 mb-2">
+                  <FunctionSquare className="w-6 h-6" />
                 </div>
-                <h3 className="text-base font-semibold text-slate-300">Ready to Generate</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Enter or select any C, C++, Python, or Java program to generate an interactive control-flow diagram automatically.
+                <p className="text-sm font-semibold text-slate-300">No Flowchart Available</p>
+                <p className="text-xs text-slate-500">
+                  Write or paste source code in the editor to automatically generate an interactive visual flowchart.
                 </p>
               </div>
             )}
@@ -313,5 +418,13 @@ export const FlowchartViewer: React.FC = () => {
         )}
       </div>
     </div>
+  );
+};
+
+export const FlowchartViewer: React.FC = () => {
+  return (
+    <ReactFlowProvider>
+      <FlowchartViewerContent />
+    </ReactFlowProvider>
   );
 };

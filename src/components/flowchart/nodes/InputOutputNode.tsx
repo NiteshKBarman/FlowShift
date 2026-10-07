@@ -5,15 +5,18 @@ import { LogIn, LogOut } from 'lucide-react';
 export const InputOutputNode: React.FC<NodeProps> = ({ data, selected }) => {
   const isInput = data.type === 'input' || (data.label as string)?.toLowerCase().startsWith('input') || (data.label as string)?.toLowerCase().includes('scanf') || (data.label as string)?.toLowerCase().includes('cin');
   const label = (data.label as string) || '';
+  const isExecuting = Boolean(data.isExecuting);
 
   return (
     <div
       className={`relative px-5 py-3 rounded-xl bg-gradient-to-r ${
-        isInput
-          ? 'from-blue-950/80 to-indigo-950/80 border-blue-500/60'
-          : 'from-purple-950/80 to-violet-950/80 border-purple-500/60'
+        isExecuting
+          ? 'from-emerald-950/90 to-teal-950/90 border-emerald-400 ring-2 ring-emerald-400/80 ring-offset-2 ring-offset-slate-950 scale-110 shadow-emerald-500/30'
+          : isInput
+            ? 'from-blue-950/80 to-indigo-950/80 border-blue-500/60'
+            : 'from-purple-950/80 to-violet-950/80 border-purple-500/60'
       } border transition-all duration-200 shadow-xl backdrop-blur-md min-w-[170px] max-w-[280px] cursor-grab active:cursor-grabbing ${
-        selected
+        selected && !isExecuting
           ? 'ring-2 ring-purple-400 ring-offset-2 ring-offset-slate-950 scale-105'
           : 'hover:border-opacity-100'
       }`}

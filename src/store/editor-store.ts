@@ -12,11 +12,16 @@ import type { ConversionStatus } from '../core/conversion/conversion-result';
 import type { ProgramIR } from '../core/ir/program-ir';
 import { sourceToFlowchart, convert } from '../core/conversion/converter';
 import { executeProgramIR } from '../core/execution/interpreter';
+import {
+  createVisualExecutionEngine,
+  type VisualExecutionEngine,
+  type ExecutionStepSnapshot,
+} from '../core/execution/visual-engine';
 import { SAMPLE_PROGRAMS } from '../data/samples';
 import '../languages'; // Initialize language adapters
 
 export type SupportedLanguage = 'c' | 'cpp' | 'python' | 'java';
-export type AppViewMode = 'split' | 'flowchart' | 'translate' | 'code';
+export type AppViewMode = 'split' | 'flowchart' | 'translate' | 'code' | 'execute' | 'practice';
 
 interface EditorState {
   // Source State
@@ -56,6 +61,12 @@ interface EditorState {
   lastExecutionTimeMs: number | null;
   lastExitCode: number | null;
 
+  // Visual Execution State
+  visualEngine: VisualExecutionEngine | null;
+  executionState: ExecutionStepSnapshot | null;
+  executionSpeedMs: number;
+  isAutoStepping: boolean;
+
   // Actions
   highlightLines: (lines: number[]) => void;
   setSourceCode: (code: string) => void;
@@ -77,9 +88,30 @@ interface EditorState {
   killExecution: () => void;
   handleTerminalCommand: (cmd: string) => void;
   runCode: (inputOverride?: string) => Promise<void>;
+
+  // Visual Execution Actions
+  initVisualExecution: () => void;
+  stepExecutionForward: () => void;
+  stepExecutionBackward: () => void;
+  playExecution: () => void;
+  pauseExecution: () => void;
+  resetExecution: () => void;
+  setExecutionSpeed: (speedMs: number) => void;
+  goToExecutionStep: (stepIndex: number) => void;
+  provideExecutionInput: (val: string) => void;
+  syncExecutionUI: (state: ExecutionStepSnapshot) => void;
+
+  // UI Shell State
+  sidebarCollapsed: boolean;
+  toggleSidebar: () => void;
+  aboutModalOpen: boolean;
+  setAboutModalOpen: (open: boolean) => void;
+  samplesMenuOpen: boolean;
+  setSamplesMenuOpen: (open: boolean) => void;
 }
 
 let activeInputResolver: ((val: string) => void) | null = null;
+let executionTimer: number | null = null;
 
 export const useEditorStore = create<EditorState>((set, get) => {
   const initialSample = SAMPLE_PROGRAMS[0];
@@ -111,7 +143,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
     terminalOpen: false,
     terminalOutput: [
-      'FlowShift Linux v6.8 (x86_64 VM) • Interactive Terminal',
+
       'Type "run" to compile & execute, "help" for commands, or click Run.',
     ],
     terminalInput: '',
@@ -121,6 +153,20 @@ export const useEditorStore = create<EditorState>((set, get) => {
     lastExecutionStatus: 'idle',
     lastExecutionTimeMs: null,
     lastExitCode: null,
+
+    // Visual Execution State
+    visualEngine: null,
+    executionState: null,
+    executionSpeedMs: 800,
+    isAutoStepping: false,
+
+    // UI Shell State
+    sidebarCollapsed: false,
+    toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+    aboutModalOpen: false,
+    setAboutModalOpen: (open: boolean) => set({ aboutModalOpen: open }),
+    samplesMenuOpen: false,
+    setSamplesMenuOpen: (open: boolean) => set({ samplesMenuOpen: open }),
 
     highlightLines: (lines: number[]) => {
       set({ highlightedLines: lines });
@@ -154,6 +200,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
     setActiveView: (view: AppViewMode) => {
       set({ activeView: view });
+      if (view === 'execute') {
+        get().initVisualExecution();
+      } else if (get().isAutoStepping) {
+        get().pauseExecution();
+      }
     },
 
     setActiveGraphId: async (id: string) => {
@@ -248,6 +299,10 @@ export const useEditorStore = create<EditorState>((set, get) => {
           diagnostics: [...flowResult.diagnostics, ...convResult.diagnostics],
           isProcessing: false,
         });
+
+        if (get().activeView === 'execute' && flowResult.ir) {
+          get().initVisualExecution();
+        }
       } catch (err) {
         set({
           isProcessing: false,
@@ -536,6 +591,150 @@ export const useEditorStore = create<EditorState>((set, get) => {
           lastExecutionTimeMs: 0,
         });
       }
+    },
+
+    syncExecutionUI: (state: ExecutionStepSnapshot) => {
+      const lines = state.currentLocation?.startLine ? [state.currentLocation.startLine] : [];
+      set({
+        highlightedLines: lines,
+        selectedNodeId: state.currentFlowNodeId || null,
+      });
+
+      if (state.activeGraphId && state.activeGraphId !== get().activeGraphId) {
+        get().setActiveGraphId(state.activeGraphId);
+      }
+    },
+
+    initVisualExecution: () => {
+      get().pauseExecution();
+      const { programIR, flowProgram } = get();
+      if (!programIR) return;
+
+      const engine = createVisualExecutionEngine(programIR, flowProgram || undefined);
+      const initial = engine.start();
+
+      set({
+        visualEngine: engine,
+        executionState: initial,
+        isAutoStepping: false,
+      });
+      get().syncExecutionUI(initial);
+    },
+
+    stepExecutionForward: () => {
+      const { visualEngine } = get();
+      if (!visualEngine) {
+        get().initVisualExecution();
+        return;
+      }
+
+      const nextState = visualEngine.stepForward();
+      set({ executionState: nextState });
+      get().syncExecutionUI(nextState);
+
+      if (
+        nextState.status === 'completed' ||
+        nextState.status === 'error' ||
+        nextState.status === 'waiting-for-input'
+      ) {
+        get().pauseExecution();
+      }
+    },
+
+    stepExecutionBackward: () => {
+      const { visualEngine } = get();
+      if (!visualEngine) return;
+
+      get().pauseExecution();
+      const prevState = visualEngine.stepBackward();
+      set({ executionState: prevState });
+      get().syncExecutionUI(prevState);
+    },
+
+    playExecution: () => {
+      if (get().isAutoStepping) return;
+
+      if (!get().visualEngine) {
+        get().initVisualExecution();
+      }
+
+      const state = get().executionState;
+      if (state && (state.status === 'completed' || state.status === 'error')) {
+        get().resetExecution();
+      }
+
+      set({ isAutoStepping: true });
+
+      if (executionTimer) {
+        clearInterval(executionTimer);
+      }
+
+      executionTimer = window.setInterval(() => {
+        const current = get().executionState;
+        const engine = get().visualEngine;
+
+        if (
+          !current ||
+          current.status === 'completed' ||
+          current.status === 'error' ||
+          current.status === 'waiting-for-input'
+        ) {
+          get().pauseExecution();
+          return;
+        }
+
+        if (engine && engine.getCurrentStepIndex() >= engine.getTotalSteps() - 1) {
+          get().pauseExecution();
+          return;
+        }
+
+        get().stepExecutionForward();
+      }, get().executionSpeedMs);
+    },
+
+    pauseExecution: () => {
+      if (executionTimer) {
+        clearInterval(executionTimer);
+        executionTimer = null;
+      }
+      set({ isAutoStepping: false });
+    },
+
+    resetExecution: () => {
+      const { visualEngine } = get();
+      if (!visualEngine) return;
+
+      get().pauseExecution();
+      const state = visualEngine.reset();
+      set({ executionState: state });
+      get().syncExecutionUI(state);
+    },
+
+    setExecutionSpeed: (speedMs: number) => {
+      set({ executionSpeedMs: speedMs });
+      if (get().isAutoStepping) {
+        get().pauseExecution();
+        get().playExecution();
+      }
+    },
+
+    goToExecutionStep: (stepIndex: number) => {
+      const { visualEngine } = get();
+      if (!visualEngine) return;
+
+      get().pauseExecution();
+      const state = visualEngine.goToStep(stepIndex);
+      set({ executionState: state });
+      get().syncExecutionUI(state);
+    },
+
+    provideExecutionInput: (val: string) => {
+      const { visualEngine } = get();
+      if (!visualEngine) return;
+
+      const nextState = visualEngine.provideInput(val);
+      set({ executionState: nextState });
+      get().syncExecutionUI(nextState);
     },
   };
 });

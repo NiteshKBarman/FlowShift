@@ -4,13 +4,16 @@ import { RotateCw, Sparkles } from 'lucide-react';
 
 export const RecursiveCallNode: React.FC<NodeProps> = ({ data, selected }) => {
   const label = (data.label as string) || '';
+  const isExecuting = Boolean(data.isExecuting);
 
   return (
     <div
       className={`relative px-4 py-3 rounded-xl bg-gradient-to-r from-amber-950/90 via-slate-900/90 to-rose-950/80 border transition-all duration-200 shadow-xl backdrop-blur-md min-w-[190px] max-w-[300px] cursor-grab active:cursor-grabbing ${
-        selected
-          ? 'border-amber-400 ring-2 ring-amber-400/50 ring-offset-2 ring-offset-slate-950 scale-105'
-          : 'border-amber-500/70 hover:border-amber-400'
+        isExecuting
+          ? 'border-emerald-400 ring-2 ring-emerald-400/80 ring-offset-2 ring-offset-slate-950 scale-110 shadow-emerald-500/30'
+          : selected
+            ? 'border-amber-400 ring-2 ring-amber-400/50 ring-offset-2 ring-offset-slate-950 scale-105'
+            : 'border-amber-500/70 hover:border-amber-400'
       }`}
     >
       {/* Side double border lines highlighting subroutine nature */}
